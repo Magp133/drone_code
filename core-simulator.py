@@ -3,19 +3,10 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from gymnasium.spaces import Box, Dict, Tuple, Discrete, MultiBinary, utils
+from actions import *
 
+import ray
 
-actions = {
-    0 : "search", # search for networks
-    1 : "start_injection", # start the injection chain
-    2 : "start_dos", # start the dos chain
-    3 : "capture_wpa_pskey", # attempt to capture the wpa network passkey
-    4 : "retry_wpa_capture", # retry the attempt
-    5 : "crack_password", # attempt to get the password through dict attack on the wpa passkey
-    6 : "join_network", # attempt to join the drone network 
-    7 : "change_network_password", # change the drone networks password
-    8 : "flood_port", # flood the drones communication port
-}
 
 class drone_env(gym.Env):
     """
@@ -39,6 +30,7 @@ class drone_env(gym.Env):
         # observation space
         self.observation_space = Dict({
             "network_found" : Discrete(2), # network found, True 1, False 0
+            "joined_network" : Discrete(2) # is the agent on the network?
             "drone_status" : Discrete(4), # 0: operational, 1: DOS, 2: crashed, 3: controlled
             "signal_strength_dbm" : Box(low=-100.0, high=0.0, shape=(), dtype=np.float32), # RSSI -100 => 0
             "cracking_progress" : Box(low=0.0, high=1.0, shape=(), dtype=np.float32), # 0.0 => 1.0
@@ -47,7 +39,16 @@ class drone_env(gym.Env):
 
         # action space
         self.action_space = Dict({
-            
+            "search_networks" : search_networks,
+            "join_network" : join_network,
+            "capture_wpa_pskey" : capture_wpa_pskey,
+            "crack_password" : crack_password,
+            "flood_port" : flood_port,
+            "wait" : wait,
+            "change_network_password" : change_network_password,
+            "land_drone" : land_drone,
+            "crash_drone" : crash_drone,
+            "jam_signals" : jam_signals
         })
 
         self.state = Dict({
@@ -102,7 +103,9 @@ class drone_env(gym.Env):
             truncated = True
 
         # process the action
-        self.action_space[action]
+        action_function = self.action_space.get(action)
+        if action_function:
+            action_function(self)
 
         # get the observation
         observation = self._obs()
@@ -113,4 +116,7 @@ class drone_env(gym.Env):
         """
         Returns the observation of the environment. Uses self.state to determine the current observation.
         """
+        pass
+
+    def update_state(self):
         pass
