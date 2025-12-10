@@ -30,37 +30,45 @@ class drone_env(gym.Env):
         # observation space
         self.observation_space = Dict({
             "network_found" : Discrete(2), # network found, True 1, False 0
-            "joined_network" : Discrete(2) # is the agent on the network?
+            "joined_network" : Discrete(2), # is the agent on the network?
             "drone_status" : Discrete(4), # 0: operational, 1: DOS, 2: crashed, 3: controlled
             "signal_strength_dbm" : Box(low=-100.0, high=0.0, shape=(), dtype=np.float32), # RSSI -100 => 0
             "cracking_progress" : Box(low=0.0, high=1.0, shape=(), dtype=np.float32), # 0.0 => 1.0
             "time_since_success" : Box(low=0.0, high=np.inf) # time since a meaningful action
-        })
+            })
 
         # action space
-        self.action_space = Dict({
-            "search_networks" : search_networks,
-            "join_network" : join_network,
-            "capture_wpa_pskey" : capture_wpa_pskey,
-            "crack_password" : crack_password,
-            "flood_port" : flood_port,
-            "wait" : wait,
-            "change_network_password" : change_network_password,
-            "land_drone" : land_drone,
-            "crash_drone" : crash_drone,
-            "jam_signals" : jam_signals
+        self.action_space = Dict(spaces={
+            "search_networks" : Discrete(2),
+            "join_network" : Discrete(2),
+            "capture_wpa_pskey" : Discrete(2),
+            "crack_password" : Discrete(2),
+            "flood_port" : Discrete(2),
+            "change_network_password" : Discrete(2),
+            "land_drone" : Discrete(2),
+            "crash_drone" : Discrete(2),
+            "jam_signals" : Discrete(2)
         })
 
-        self.state = Dict({
-            "has_password" : Discrete(2), # does the drone network have a password.
-            "password_in_list" : Discrete(2), # is the drone password in the attacking dictionary list?
-        }) # information about the drone env that is used to derive all observations about the env.
+        self.state = {
+            "drone_status" : "operational", # operational, controlled, crashed
+            "found_network" : False, # has the agent identified a drone network. 
+            "on_drone_network" : False, # is the agent connected to the drone's network.
+            "network_has_password" : self.np_random.choice([True, False]), # determine if the drone network is password protected. 
+            "password_list_has_password" : self.np_random.choice([True, False]), # determine if the drone's network password is contained by the password list.
+            "signal_strength" : self.np_random.uniform(low= -100.0, high= -85.0), # signal strength of the drone. Starts far away. 
+            "password_cracking_progress" : 0.0, # cracking progress of the password
+            "has_wpa_pskey" : False, # has the agent found the wpa pskey.
+            "last_action" : None, # stores the last action
+            "action_success" : False, # did the last action succeed. 
+            "target_port_vulnerable" : self.np_random.choice([True, False]), # is the target port vulnerable to dos flooding attack. 
 
+        }
 
         self.current_obs = None
         self.current_step = 0
 
-    def reset(self, seed=None, options=None):
+    def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
 
         """
@@ -78,16 +86,18 @@ class drone_env(gym.Env):
             init_rssi,
             init_crack_progress,
             init_time_since_success
-        ], dtype=np.float)
+        ], dtype=np.float32)
 
         self.current_step = 0
         info = {}
         return self.current_obs, info
 
-    def step(self, action: str):
+    def step(self, action: dict):
         """
         Takes an action from an agent and updates the environment.
         Give the agent new observations.
+
+        Need to change to disallow multiple actions taken during a single step. 
         """
         
         reward =0.05
@@ -95,20 +105,61 @@ class drone_env(gym.Env):
         truncated = False
         info = {}
 
-        #unpack current observation
-        net_found, drone_status, rssi, crack_progress, time_since_success = self.current_obs
+        # get the action space
+        search_networks = action["search_networks"]
+        join_network = action["join_network"]
+        capture_wpa_pskey = action["capture_wpa_pskey"]
+        crack_password = action["crack_password"]
+        flood_port = action["flood_port"]
+        change_network_password = action["change_network_passwordd"]
+        land_drone = action["land_drone"]
+        crash_drone = action["crash_drone"]
+        jam_signals = action["jam_signals"]
 
-        # maximum episode (truncation)
-        if self.current_step >= 500:
-            truncated = True
+        if search_networks == 1:
+            func_reward = search_for_drone_network(self)
+            reward += func_reward
 
-        # process the action
-        action_function = self.action_space.get(action)
-        if action_function:
-            action_function(self)
+        if join_network == 1:
+            func_reward = join_drone_network(self)
+            reward += func_reward
+
+        if capture_wpa_pskey == 1:
+            func_reward = capture_drone_wpa_pskey(self)
+            reward += func_reward
+        
+        if crack_password == 1:
+            func_reward = crack_drone_password(self)
+            reward += func_reward
+        
+        if flood_port == 1:
+            func_reward = flood_drone_port(self)
+            reward += func_reward
+
+        if change_network_password == 1:
+            func_reward = change_drone_network_password(self)
+            reward += func_reward
+
+        if land_drone == 1:
+            func_reward = land_drone_func(self)
+            reward += func_reward
+
+        if crash_drone == 1:
+            func_reward = crash_drone_func(self)
+            reward += func_reward
+        
+        if jam_signals == 1:
+            func_reward = jam_drone_signals(self)
+            reward += func_reward
+        
 
         # get the observation
         observation = self._obs()
+
+        self.current_step += 1
+
+        if self.current_step >= 500:
+            truncated = True
 
         return observation, reward, terminated, truncated, info
 
