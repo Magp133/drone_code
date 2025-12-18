@@ -70,7 +70,7 @@ def crack_drone_password(env) -> float:
     start the process of cracking the password.
     """
 
-    if not env.state["has_wpa_key"]:
+    if not env.state["has_wpa_pskey"]:
         return -0.5
     else:
         env.state["password_cracking_started"] = True
@@ -128,7 +128,7 @@ def crash_drone_func(env) -> float:
     attempt to crash the drone through injection.
     """
     if env.state["on_drone_network"] and env.state["drone_status"] == 1:
-        env.status["drone_status"] = 2 # drone is crashed.
+        env.state["drone_status"] = 2 # drone is crashed.
         return 5.0
     return -0.1
 
@@ -141,3 +141,9 @@ def jam_drone_signals(env) -> float:
     env.state["drone_status"] = 2
 
     return -10.0
+
+def wait(env) -> float:
+    """
+    wait one step.
+    """
+    return 0.0
