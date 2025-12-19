@@ -1,5 +1,4 @@
 from core_simulator import *
-from setup import *
 
 from gymnasium.utils.env_checker import check_env
 

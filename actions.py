@@ -2,7 +2,6 @@
 File containing the different actions that can be taken.
 """
 import numpy as np
-import gymnasium as gym
 
 
 def search_for_drone_network(env) -> float:
