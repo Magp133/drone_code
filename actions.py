@@ -114,7 +114,7 @@ def land_drone_func(env) -> float:
     if env.state["on_drone_network"] and env.state["drone_status"] == 1: # agent is on drone network and drone is controlled.
         # trying to land doesnt always work.
         if np.random.random() < 0.5:
-            env.status["drone_status"] = 3 # drone is landed.
+            env.state["drone_status"] = 3 # drone is landed.
             return 10.0
         else:
             return 0.1

@@ -30,3 +30,5 @@ def move_drone(env) -> None:
     """
     signal_change = np.random.uniform(low=-5.0, high=10.0)
     env.state["signal_strength"] += signal_change
+
+    env.state["signal_strength"] = np.clip(env.state["signal_strength"], -100.0, 0.0)
