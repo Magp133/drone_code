@@ -46,7 +46,7 @@ class drone_env(gym.Env):
         }
 
         self.state = {
-            "drone_status" : 0, # 0, operational, 1 controlled, 2 crashed, 3 landed
+            "drone_status" : 0, # 0 operational, 1 controlled, 2 crashed, 3 landed
             "found_network" : False, # has the agent identified a drone network. 
             "on_drone_network" : False, # is the agent connected to the drone's network.
             "network_has_password" : self.np_random.choice([True, False]), # determine if the drone network is password protected. 
@@ -125,6 +125,10 @@ class drone_env(gym.Env):
             truncated = True
 
         if self.state["drone_status"] == 2 or self.state["drone_status"] == 3: # drone has crashed or landed
+            terminated = True
+
+        if self.state["signal_strength"] >= -5:
+            # Drone has gotten too close to the defended target. 
             terminated = True
 
         return observation, reward, terminated, truncated, info
