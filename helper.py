@@ -14,15 +14,7 @@ def increment_cracking(env) -> None:
         env.state["password_cracking_progress"] += np.random.uniform(low=0.1, high=0.25)
     
     if env.state["password_cracking_progress"] > 1.0:
-        env.state["password_cracking_progress"] = 1.
-
-def update_wpa_pskey(env) -> None:
-    """
-    updates the internal state of the wpa_pskey for the agent.
-    """
-    if env.state["password_cracking_progress"] >= 1.0:
-        if env.state["password_list_has_password"]:
-            env.state["has_wpa_pskey"] = True
+        env.state["password_cracking_progress"] = 1.0
 
 def move_drone(env) -> None:
     """

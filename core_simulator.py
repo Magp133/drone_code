@@ -23,9 +23,11 @@ class drone_env(gym.Env):
         self.observation_space = Dict({
             "network_found" : Discrete(2), # network found, True 1, False 0
             "joined_network" : Discrete(2), # is the agent on the network?
-            "drone_status" : Discrete(4), # 0: operational, 1: DOS, 2: crashed, 3: controlled
+            "drone_status" : Discrete(4), # 0: operational, 1: controlled, 2: crashed, 3: landed
             "signal_strength_dbm" : Box(low=-100.0, high=0.0, shape=(), dtype=np.float32), # RSSI -100 => 0
-            "cracking_progress" : Box(low=0.0, high=1.0, shape=(), dtype=np.float32) # 0.0 => 1.0
+            "cracking_progress" : Box(low=0.0, high=1.0, shape=(), dtype=np.float32), # 0.0 => 1.0
+            "has_wpa_password" : Discrete(2), # true or false
+            "cracking_started" : Discrete(2) # true or false
             })
 
         # action space
@@ -54,7 +56,7 @@ class drone_env(gym.Env):
             "signal_strength" : -100, # signal strength of the drone. Starts far away. 
             "password_cracking_started" : False, # has the password cracking began
             "password_cracking_progress" : 0.0, # cracking progress of the password
-            "has_wpa_pskey" : False, # has the agent found the wpa pskey.
+            "has_wpa_pskey" : False, # has the agent found the wpa pskey from deauthentication attack. 
             "target_port_vulnerable" : self.np_random.choice([True, False]), # is the target port vulnerable to dos flooding attack. 
 
         }
@@ -89,7 +91,7 @@ class drone_env(gym.Env):
 
         return observation, info
 
-    def step(self, action: dict):
+    def step(self, action):
         """
         Takes an action from an agent and updates the environment.
         Give the agent new observations.
@@ -144,6 +146,8 @@ class drone_env(gym.Env):
                 "drone_status" : self.state["drone_status"], # Assuming status is an integer (0-3)
                 "signal_strength_dbm": np.array(self.state["signal_strength"], dtype=np.float32),
                 "cracking_progress": np.array(self.state["password_cracking_progress"], dtype=np.float32),
+                "has_wpa_password" : self.state["has_wpa_pskey"],
+                "cracking_started" : self.state["password_cracking_started"]
             }
         
         return self.current_obs
@@ -154,5 +158,4 @@ class drone_env(gym.Env):
         Progresses certain actions/ changes states given newly made changes. 
         """
         increment_cracking(self)
-        update_wpa_pskey(self)
         move_drone(self)
