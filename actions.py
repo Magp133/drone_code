@@ -2,6 +2,7 @@
 File containing the different actions that can be taken.
 """
 import numpy as np
+from helper import *
 
 
 def search_for_drone_network(env) -> float:
@@ -13,13 +14,10 @@ def search_for_drone_network(env) -> float:
     """
     # if the network has already been found then return small penalty.
     if env.state["found_network"]:
-        return -0.1
-    
-    signal_strength = env.state["signal_strength"]
+        return -0.5
 
-    probability_of_success = (signal_strength + 100.0) / 100.0
 
-    if np.random.random() < probability_of_success:
+    if np.random.random() < calculate_success_prob(env=env):
         env.state["found_network"] = True
         return 1.0
     else:
@@ -34,27 +32,25 @@ def join_drone_network(env) -> float:
     """
     
     if not env.state["found_network"]:
-        return -0.1
+        return -1.0
 
     if env.state["on_drone_network"]:
-        return -0.1
+        return -1.0
     
-    signal_strength = env.state["signal_strength"]
-    probability_of_success = (signal_strength + 100.0) / 100.0
     
     # check if the network has a password.
     # if so then does the agent also have the password to get on the network?
     if env.state["network_has_password"]:
         if env.state["password_cracking_progress"] == 1.0:
-            if np.random.random() < probability_of_success:
+            if np.random.random() < calculate_success_prob(env=env):
                 env.state["on_drone_network"] = True
                 return 1.0
             else:
                 return -0.1
         else:
-            return -0.1
+            return -1.0
     else:
-        if np.random.random() < probability_of_success:
+        if np.random.random() < calculate_success_prob(env=env):
             env.state["on_drone_network"] = True
             return 1.0
         else:
@@ -71,8 +67,7 @@ def capture_drone_wpa_pskey(env) -> float:
     action 2
     """
 
-    # check the prerequesites are met.
-    if not env.state["found_network"] and not env.state["has_wpa_pskey"]:
+    if env.state["has_wpa_pskey"]:
         return -0.5
 
     # does the drone network have a password?
@@ -80,11 +75,12 @@ def capture_drone_wpa_pskey(env) -> float:
     if not env.state["network_has_password"]:
         return -0.1
     
-    if np.random.random() < 0.5:
-        env.state["has_wpa_pskey"] = True
-        return 1.0
-    else:
-        return -0.1
+    if env.state["found_network"]:
+        if np.random.random() < calculate_success_prob(env=env):
+            env.state["has_wpa_pskey"] = True
+            return 1.0
+        
+    return -0.5
 
 def crack_drone_password(env) -> float:
     """

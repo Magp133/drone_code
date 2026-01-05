@@ -3,6 +3,8 @@ from ray.rllib.algorithms.ppo import PPO
 from ray.tune.registry import register_env
 from core_simulator import drone_env
 
+from helper import *
+
 def env_creator(env_config):
     return drone_env()
 ENV_NAME = "DroneHackingEnv-v0"
@@ -28,6 +30,7 @@ while not done:
     obs, reward, terminated, truncated, info = env.step(action)
     
     # Print the specific action taken for debugging
+    print(calculate_success_prob(env=env))
     print(f"Action: {action} | Reward: {reward} | Drone Status: {env.state['drone_status']}")
     
     total_reward += reward
