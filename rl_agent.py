@@ -25,12 +25,21 @@ def train():
     config = config.api_stack(enable_env_runner_and_connector_v2=False, enable_rl_module_and_learner=False)
 
     config = config.training(
-        lr=5e-5,
+        lr=3e-5,
         gamma=0.99,
         lambda_=0.95,
         clip_param=0.2,
-        minibatch_size=64, 
-        train_batch_size=4000,
+        minibatch_size=128, 
+        train_batch_size=8000,
+        entropy_coeff_schedule=[
+                    [0, 0.2],         
+                    [100, 0.01],    
+                ],
+        vf_loss_coeff=1.0,
+        model={
+            "fcnet_hiddens": [512, 512, 256], # Deeper and wider layers
+            "fcnet_activation": "relu",
+        }
     )
 
     config = config.evaluation(
@@ -45,7 +54,7 @@ def train():
     print(f"--- Starting Training on {ENV_NAME} ---")
     checkpoint_dir = "checkpoints"
     
-    for i in range(50):  # Total training iterations
+    for i in range(200):  # Total training iterations
         result = algo.train()
         
         # Print key metrics

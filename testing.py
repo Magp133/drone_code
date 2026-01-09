@@ -2,6 +2,7 @@ import os
 from ray.rllib.algorithms.ppo import PPO
 from ray.tune.registry import register_env
 from core_simulator import drone_env
+from pprint import pprint
 
 from helper import *
 
@@ -18,7 +19,8 @@ checkpoint_path = os.path.abspath("checkpoints")
 algo = PPO.from_checkpoint(checkpoint_path)
 
 print("--- Starting Inference Test ---")
-print(f"Internal state: {env.state}")
+print("Internal State")
+pprint(env.state)
 done = False
 total_reward = 0
 
@@ -30,9 +32,10 @@ while not done:
     obs, reward, terminated, truncated, info = env.step(action)
     
     # Print the specific action taken for debugging
-    print(calculate_success_prob(env=env))
-    print(f"Action: {action} | Reward: {reward} | Drone Status: {env.state['drone_status']}")
     
+    print(f"Action: {action} | Reward: {reward} | Drone Status: {env.state['drone_status']}")
+    pprint(env.state)
+
     total_reward += reward
     done = terminated or truncated
 

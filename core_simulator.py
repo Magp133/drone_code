@@ -27,7 +27,8 @@ class drone_env(gym.Env):
             "signal_strength_dbm" : Box(low=-100.0, high=0.0, shape=(), dtype=np.float32), # RSSI -100 => 0
             "cracking_progress" : Box(low=0.0, high=1.0, shape=(), dtype=np.float32), # 0.0 => 1.0
             "has_wpa_password" : Discrete(2), # true or false
-            "cracking_started" : Discrete(2) # true or false
+            "cracking_started" : Discrete(2), # true or 
+            "network_has_password" : Discrete(2), # true or false
             })
 
         # action space
@@ -51,7 +52,7 @@ class drone_env(gym.Env):
             "drone_status" : 0, # 0 operational, 1 controlled, 2 crashed, 3 landed
             "found_network" : False, # has the agent identified a drone network. 
             "on_drone_network" : False, # is the agent connected to the drone's network.
-            "network_has_password" : self.np_random.choice([True, False]), # determine if the drone network is password protected. 
+            "network_has_password" : self.np_random.choice([0, 1]), # determine if the drone network is password protected. 
             "password_list_has_password" : self.np_random.choice([True, False]), # determine if the drone's network password is contained by the password list.
             "signal_strength" : -100, # signal strength of the drone. Starts far away. 
             "password_cracking_started" : False, # has the password cracking began
@@ -147,7 +148,8 @@ class drone_env(gym.Env):
                 "signal_strength_dbm": np.array(self.state["signal_strength"], dtype=np.float32),
                 "cracking_progress": np.array(self.state["password_cracking_progress"], dtype=np.float32),
                 "has_wpa_password" : self.state["has_wpa_pskey"],
-                "cracking_started" : self.state["password_cracking_started"]
+                "cracking_started" : self.state["password_cracking_started"],
+                "network_has_password" : int(self.state["network_has_password"])
             }
         
         return self.current_obs
